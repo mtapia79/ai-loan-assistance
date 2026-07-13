@@ -51,8 +51,9 @@ async def lifespan(app: FastAPI):
     # Initialize infrastructure services (Redis, etc.)
     await InfrastructureManager.initialize()
 
-    # Set up observability
-    setup_telemetry(app)
+    # Re-run telemetry setup to configure exporters at runtime
+    # (FastAPI app instrumentation was already done at module level)
+    setup_telemetry()
 
     logger.info("app_startup_complete")
     yield
@@ -93,6 +94,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ── Observability ──────────────────────────────────────────────────────────────
+# Instrument the FastAPI app with OpenTelemetry at module level, BEFORE the
+# middleware stack is built. Calling instrument_app inside the lifespan is too
+# late – Starlette builds middleware_stack on the very first ASGI call (the
+# lifespan startup event itself), so add_middleware would raise RuntimeError.
+setup_telemetry(app)
 
 # ── Exception Handlers ─────────────────────────────────────────────────────────
 
