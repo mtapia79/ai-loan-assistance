@@ -15,13 +15,12 @@ from app.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Whitelist of allowed table names to prevent SQL injection
-ALLOWED_TABLE_NAMES = {"documents", "embeddings", "vectors", "policies"}
-
 
 def _validate_table_name(table_name: str) -> None:
     """
     Validate table name to prevent SQL injection.
+
+    Uses regex pattern to ensure only valid PostgreSQL identifiers are allowed.
 
     Args:
         table_name: Name to validate
