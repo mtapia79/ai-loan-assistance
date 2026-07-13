@@ -4,9 +4,10 @@ API Routes – Health Check
 Provides liveness and readiness probes for Kubernetes and load balancers.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import JSONResponse
 
 from app.config import get_settings
 from app.db.session import get_session
@@ -29,7 +30,7 @@ async def health_check() -> HealthResponse:
 
 
 @router.get("/health/ready", response_model=HealthResponse)
-async def readiness_check(db: AsyncSession = Depends(get_session)) -> HealthResponse:
+async def readiness_check(db: AsyncSession = Depends(get_session)) -> Response:
     """
     Readiness probe – checks that critical dependencies are available.
 
@@ -62,18 +63,15 @@ async def readiness_check(db: AsyncSession = Depends(get_session)) -> HealthResp
         status.HTTP_200_OK if status_str == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
     )
 
-    response = HealthResponse(
+    response_data = HealthResponse(
         status=status_str,
         version=settings.app_version,
         env=settings.app_env,
         checks=checks,
     )
 
-    # If degraded, raise exception to set proper HTTP status code
-    if status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
-        raise HTTPException(
-            status_code=status_code,
-            detail=f"Service degraded. Checks: {checks}",
-        )
-
-    return response
+    # Return with appropriate status code
+    return JSONResponse(
+        status_code=status_code,
+        content=response_data.model_dump(),
+    )

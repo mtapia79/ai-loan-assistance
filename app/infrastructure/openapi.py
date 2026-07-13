@@ -16,7 +16,7 @@ def customize_openapi(app: FastAPI) -> dict[str, Any]:
     Generate customized OpenAPI schema.
 
     Adds:
-    - Security schemes (****** API key)
+    - Security schemes (****** and API key)
     - Server information
     - Contact and license info
     - Enhanced descriptions

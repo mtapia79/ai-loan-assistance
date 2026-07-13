@@ -60,41 +60,8 @@ class ServiceContainer:
 
 # These can be used directly in route handlers:
 # async def my_handler(
-#     db: AsyncSession = Depends(get_db_session),
-#     redis: redis.Redis = Depends(get_redis),
-#     vector_db: VectorDatabase = Depends(get_vector_db),
+#     db: AsyncSession = Depends(ServiceContainer.get_db_session),
+#     redis: redis.Redis = Depends(ServiceContainer.get_redis),
+#     vector_db: VectorDatabase = Depends(ServiceContainer.get_vector_db),
 # ) -> dict:
 #     ...
-
-
-def get_db_service() -> Any:
-    """
-    Factory for database session dependency.
-
-    Usage:
-        async def handler(db = Depends(get_db_service)):
-            ...
-    """
-    return Depends(get_session)
-
-
-def get_redis_service() -> Any:
-    """
-    Factory for Redis client dependency.
-
-    Usage:
-        async def handler(redis = Depends(get_redis_service)):
-            ...
-    """
-    return Depends(get_redis_client)
-
-
-def get_vector_db_service() -> Any:
-    """
-    Factory for vector database dependency.
-
-    Usage:
-        async def handler(vector_db = Depends(get_vector_db_service)):
-            ...
-    """
-    return Depends(ServiceContainer.get_vector_db)

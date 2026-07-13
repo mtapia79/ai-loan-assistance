@@ -95,7 +95,7 @@ class VectorDatabase:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE INDEX IF NOT EXISTS {table_name}_embedding_idx
+            CREATE INDEX IF NOT EXISTS "{table_name}_embedding_idx"
                 ON {quoted_table}
                 USING HNSW (embedding vector_cosine_ops);
             """

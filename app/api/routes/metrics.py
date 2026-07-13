@@ -15,6 +15,19 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["metrics"])
 
 # ── Prometheus Metrics ─────────────────────────────────────────────────────
+#
+# These metrics are defined and exported by the /metrics endpoint.
+# To use them in the application:
+#
+# 1. Import the metric: from app.api.routes.metrics import http_requests_total
+# 2. Increment it when the event occurs: http_requests_total.labels(
+#    method="GET", endpoint="/api/loans", status_code=200).inc()
+#
+# Typically, metrics are incremented by:
+# - Middleware for http_requests_total and http_request_duration_seconds
+# - Request handlers for application-specific metrics (loan_analysis_total, etc.)
+# - Database query wrappers for database_query_duration_seconds
+#
 
 # Request metrics
 http_requests_total = Counter(
