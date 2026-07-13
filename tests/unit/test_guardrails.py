@@ -5,7 +5,6 @@ Tests input validation, output validation, and document PII redaction.
 No database or LLM required.
 """
 
-import pytest
 
 from app.guardrails.validators import (
     GuardrailSeverity,

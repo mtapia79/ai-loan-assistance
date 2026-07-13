@@ -6,10 +6,9 @@ All public API contracts are defined here with strict validation.
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
 
 # ── Request Models ────────────────────────────────────────────────────────────
 
@@ -28,7 +27,7 @@ class LoanApplicationRequest(BaseModel):
         max_length=100,
         examples=["home_purchase", "auto", "personal", "business"],
     )
-    credit_score: Optional[int] = Field(
+    credit_score: int | None = Field(
         default=None, ge=300, le=850, description="FICO score if available"
     )
 
@@ -65,7 +64,7 @@ class AgentStep(BaseModel):
     agent: str
     finding: str
     confidence: float = Field(..., ge=0.0, le=1.0)
-    details: Optional[dict[str, Any]] = None
+    details: dict[str, Any] | None = None
 
 
 class LoanDecisionResponse(BaseModel):

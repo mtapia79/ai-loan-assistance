@@ -14,8 +14,7 @@ For demo purposes a fast heuristic evaluator is used (no extra API cost).
 
 import re
 import uuid
-from datetime import datetime, timezone
-from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.observability.logging import get_logger
 from app.schemas.loan import EvaluationResult
@@ -159,7 +158,7 @@ def evaluate_decision(
         coherence_score=round(coherence, 3),
         overall_score=round(overall, 3),
         flags=flags,
-        evaluated_at=datetime.now(tz=timezone.utc),
+        evaluated_at=datetime.now(tz=UTC),
     )
 
     logger.info(

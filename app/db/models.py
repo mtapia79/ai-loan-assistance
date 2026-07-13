@@ -7,7 +7,6 @@ and audit-ready loan application records.
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -49,16 +48,16 @@ class LoanApplication(Base):
     monthly_debt: Mapped[float] = mapped_column(Float, nullable=False)
     requested_amount: Mapped[float] = mapped_column(Float, nullable=False)
     loan_purpose: Mapped[str] = mapped_column(String(100), nullable=False)
-    credit_score: Mapped[Optional[int]] = mapped_column(nullable=True)
+    credit_score: Mapped[int | None] = mapped_column(nullable=True)
 
     # Decision
-    recommendation: Mapped[Optional[str]] = mapped_column(
+    recommendation: Mapped[str | None] = mapped_column(
         Enum("APPROVE", "REJECT", "MANUAL_REVIEW", name="recommendation_enum"),
         nullable=True,
     )
-    confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    agent_reasoning: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_reasoning: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(
@@ -109,9 +108,9 @@ class LoanDocument(Base):
     )
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
     document_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    s3_key: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    extracted_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    s3_key: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -133,10 +132,10 @@ class PolicyDocument(Base):
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(nullable=False, default=0)
-    metadata_: Mapped[Optional[dict]] = mapped_column("metadata", JSON, nullable=True)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
     # pgvector column – dimension set from config
-    embedding: Mapped[Optional[list[float]]] = mapped_column(
+    embedding: Mapped[list[float] | None] = mapped_column(
         Vector(get_settings().vector_dimension), nullable=True
     )
 
@@ -170,9 +169,9 @@ class AuditLog(Base):
     )
     agent_name: Mapped[str] = mapped_column(String(100), nullable=False)
     action: Mapped[str] = mapped_column(String(200), nullable=False)
-    details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    span_id: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

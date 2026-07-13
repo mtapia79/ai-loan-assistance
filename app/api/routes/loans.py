@@ -6,16 +6,15 @@ Endpoints for submitting loan applications and retrieving decisions.
 
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.orchestrator import process_loan_application
 from app.db.session import get_session
 from app.evaluation.evaluator import evaluate_decision
 from app.guardrails.validators import (
-    sanitise_document_text,
     validate_decision_output,
     validate_loan_input,
 )
@@ -176,7 +175,7 @@ async def analyze_loan_application(
         agent_steps=agent_steps,
         processing_time_ms=elapsed_ms,
         model_used=settings.openai_model,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
     )
 
 

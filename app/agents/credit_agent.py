@@ -22,7 +22,7 @@ You have access to:
 
 Analyse the credit data and provide:
 1. FICO score assessment
-2. DTI ratio analysis  
+2. DTI ratio analysis
 3. Payment history evaluation
 4. Risk tier classification
 5. Confidence score (0.0–1.0)
