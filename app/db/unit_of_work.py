@@ -22,14 +22,21 @@ class UnitOfWork:
     Manages all repositories and provides transaction semantics (commit/rollback).
 
     Note: When using as a context manager, the context will automatically commit
-    on successful exit. If you call commit() manually within the context, the
-    automatic commit on exit will be skipped.
+    on successful exit. The session is NOT closed by the context manager to allow
+    reuse by the FastAPI dependency injection system or session factory.
 
-    Usage:
+    Usage (with FastAPI dependency injection):
         async with UnitOfWork(session) as uow:
             customer = await uow.customers.get_by_email("user@example.com")
             loan = await uow.loans.create(customer_id=customer.id, ...)
+            # Auto-commit on successful exit
+
+    Usage (manual session management):
+        async with UnitOfWork(session) as uow:
+            customer = await uow.customers.get_by_email("user@example.com")
+            # Call commit explicitly if needed
             await uow.commit()
+            # Session is managed by the factory after this
 
     Attributes:
         customers: CustomerRepository instance
@@ -80,6 +87,9 @@ class UnitOfWork:
         """
         Exit async context manager.
 
+        Commits on success unless already committed. Does not close the session
+        to allow management by dependency injection systems.
+
         Args:
             exc_type: Exception type if an error occurred
             exc_val: Exception value if an error occurred
@@ -90,4 +100,3 @@ class UnitOfWork:
         elif not self._manual_commit:
             # Only auto-commit if no manual commit was called
             await self.commit()
-        await self._session.close()

@@ -24,11 +24,12 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
 
         Args:
             title: The policy title to search for
-                   (automatically escaped by SQLAlchemy)
+                   (SQLAlchemy automatically escapes this value)
 
         Returns:
             List of matching policy documents
         """
+        # Using ilike() with f-string is safe - SQLAlchemy binds the parameter
         stmt = select(self.model).where(self.model.title.ilike(f"%{title}%"))
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -67,13 +68,14 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
 
         Args:
             fragment: Text fragment to search for
-                      (automatically escaped by SQLAlchemy)
+                      (SQLAlchemy automatically escapes this value)
             skip: Number of records to skip
             limit: Maximum number of records to return
 
         Returns:
             List of matching documents
         """
+        # Using ilike() with f-string is safe - SQLAlchemy binds the parameter
         stmt = (
             select(self.model)
             .where(self.model.content.ilike(f"%{fragment}%"))

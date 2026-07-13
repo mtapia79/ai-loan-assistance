@@ -356,7 +356,6 @@ async def main() -> None:
                 # Seed customers
                 logger.info("Seeding customers...")
                 customer_ids = await seed_customers(uow, count=10)
-                await uow.commit()
                 logger.info(f"Created {len(customer_ids)} customers")
 
                 # Seed loan applications
@@ -364,20 +363,19 @@ async def main() -> None:
                 application_ids = await seed_loan_applications(
                     uow, customer_ids, count_per_customer=2
                 )
-                await uow.commit()
                 logger.info(f"Created {len(application_ids)} loan applications")
 
                 # Seed audit logs
                 logger.info("Seeding audit logs...")
                 await seed_audit_logs(uow, application_ids)
-                await uow.commit()
                 logger.info(f"Created audit logs for {len(application_ids)} applications")
 
                 # Seed policies
                 logger.info("Seeding policy documents...")
                 await seed_policies(uow)
-                await uow.commit()
                 logger.info("Created policy documents")
+
+                # Context manager will auto-commit on successful exit
 
         logger.info("✓ Seed data generation completed successfully!")
 
