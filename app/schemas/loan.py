@@ -12,6 +12,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 # ── Request Models ────────────────────────────────────────────────────────────
 
+
 class LoanApplicationRequest(BaseModel):
     """Incoming loan application from the loan officer UI or API client."""
 
@@ -58,6 +59,7 @@ class LoanApplicationRequest(BaseModel):
 
 # ── Response Models ───────────────────────────────────────────────────────────
 
+
 class AgentStep(BaseModel):
     """Single agent reasoning step for explainability."""
 
@@ -102,6 +104,7 @@ class LoanApplicationResponse(BaseModel):
 
 # ── Health Check ─────────────────────────────────────────────────────────────
 
+
 class HealthResponse(BaseModel):
     status: str
     version: str
@@ -110,6 +113,7 @@ class HealthResponse(BaseModel):
 
 
 # ── Evaluation ────────────────────────────────────────────────────────────────
+
 
 class EvaluationResult(BaseModel):
     """LLM quality evaluation result for a single decision."""

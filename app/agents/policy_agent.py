@@ -90,9 +90,12 @@ Please apply the relevant policies and provide your compliance assessment.
             HumanMessage(content=user_content),
         ]
     )
+    response_content = (
+        response.content if isinstance(response.content, str) else json.dumps(response.content)
+    )
 
     try:
-        result = json.loads(response.content)
+        result = json.loads(response_content)
     except json.JSONDecodeError:
         result = {
             "policies_applied": [],

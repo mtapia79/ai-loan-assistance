@@ -32,14 +32,13 @@ class Base(DeclarativeBase):
 
 # ── Loan Application ─────────────────────────────────────────────────────────
 
+
 class LoanApplication(Base):
     """Core loan application record with full audit trail."""
 
     __tablename__ = "loan_applications"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     applicant_name: Mapped[str] = mapped_column(String(255), nullable=False)
     applicant_email: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -61,18 +60,13 @@ class LoanApplication(Base):
 
     # Status
     status: Mapped[str] = mapped_column(
-        Enum(
-            "PENDING", "PROCESSING", "COMPLETED", "FAILED",
-            name="application_status_enum"
-        ),
+        Enum("PENDING", "PROCESSING", "COMPLETED", "FAILED", name="application_status_enum"),
         default="PENDING",
         nullable=False,
     )
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -95,14 +89,13 @@ class LoanApplication(Base):
 
 # ── Loan Documents ────────────────────────────────────────────────────────────
 
+
 class LoanDocument(Base):
     """Uploaded financial document metadata."""
 
     __tablename__ = "loan_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("loan_applications.id", ondelete="CASCADE"), nullable=False
     )
@@ -121,14 +114,13 @@ class LoanDocument(Base):
 
 # ── Policy Embeddings (RAG) ───────────────────────────────────────────────────
 
+
 class PolicyDocument(Base):
     """Lending policy chunks stored with pgvector embeddings for RAG."""
 
     __tablename__ = "policy_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(nullable=False, default=0)
@@ -139,9 +131,7 @@ class PolicyDocument(Base):
         Vector(get_settings().vector_dimension), nullable=True
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         Index(
@@ -156,14 +146,13 @@ class PolicyDocument(Base):
 
 # ── Audit Log ─────────────────────────────────────────────────────────────────
 
+
 class AuditLog(Base):
     """Immutable audit trail for all agent decisions and actions."""
 
     __tablename__ = "audit_logs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("loan_applications.id", ondelete="CASCADE"), nullable=False
     )
@@ -173,9 +162,7 @@ class AuditLog(Base):
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     application: Mapped["LoanApplication"] = relationship(back_populates="audit_logs")
 

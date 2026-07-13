@@ -5,8 +5,10 @@ Extracts and validates financial data from uploaded documents.
 """
 
 import json
+from typing import Any, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 
 from app.mcp.tools import extract_document_data
@@ -73,9 +75,12 @@ async def run_document_agent(
         }
 
     # Extract data from each document
-    extractions = []
+    extractions: list[dict[str, Any]] = []
     for doc_text in document_texts:
-        extracted = extract_document_data.invoke({"document_text": doc_text})
+        extracted = cast(
+            dict[str, Any],
+            cast(BaseTool, extract_document_data).invoke({"document_text": doc_text}),
+        )
         extractions.append(extracted)
 
     user_content = f"""
@@ -95,9 +100,12 @@ Please assess document quality and identify any discrepancies.
             HumanMessage(content=user_content),
         ]
     )
+    response_content = (
+        response.content if isinstance(response.content, str) else json.dumps(response.content)
+    )
 
     try:
-        result = json.loads(response.content)
+        result = json.loads(response_content)
     except json.JSONDecodeError:
         result = {
             "documents_reviewed": len(document_texts),

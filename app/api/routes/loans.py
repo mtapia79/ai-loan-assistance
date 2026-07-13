@@ -109,8 +109,7 @@ async def analyze_loan_application(
         # Override to MANUAL_REVIEW rather than returning a bad decision
         decision["recommendation"] = "MANUAL_REVIEW"
         decision["explanation"] = (
-            decision.get("explanation", "")
-            + " [Escalated to manual review by output guardrail]"
+            decision.get("explanation", "") + " [Escalated to manual review by output guardrail]"
         )
 
     # ── Build Response ─────────────────────────────────────────────
@@ -164,6 +163,7 @@ async def analyze_loan_application(
     elapsed_ms = int((time.time() - start_time) * 1000)
 
     from app.config import get_settings
+
     settings = get_settings()
 
     return LoanDecisionResponse(

@@ -10,6 +10,7 @@ Usage:
 
 import asyncio
 import uuid
+from typing import TypedDict
 
 from sqlalchemy import delete, text
 
@@ -18,6 +19,14 @@ from app.observability.logging import get_logger
 from app.rag.embeddings import get_embedding_service
 
 logger = get_logger(__name__)
+
+
+class PolicyChunk(TypedDict):
+    id: uuid.UUID
+    title: str
+    content: str
+    chunk_index: int
+
 
 # ── Lending Policy Corpus ─────────────────────────────────────────────────────
 # In production this would be loaded from S3 / a document store.
@@ -143,15 +152,15 @@ async def ingest_policies() -> None:
         # Clear existing policies for clean re-ingestion
         await session.execute(delete(text("policy_documents")))  # type: ignore[arg-type]
 
-        all_chunks: list[dict] = []
+        all_chunks: list[PolicyChunk] = []
         for policy in LENDING_POLICIES:
             chunks = _chunk_text(policy["content"])
-            for idx, chunk in enumerate(chunks):
+            for idx, content_chunk in enumerate(chunks):
                 all_chunks.append(
                     {
                         "id": uuid.uuid4(),
                         "title": policy["title"],
-                        "content": chunk,
+                        "content": content_chunk,
                         "chunk_index": idx,
                     }
                 )
@@ -162,7 +171,7 @@ async def ingest_policies() -> None:
         texts = [c["content"] for c in all_chunks]
         embeddings = await embedder.embed_documents(texts)
 
-        for chunk, embedding in zip(all_chunks, embeddings):
+        for policy_chunk, embedding in zip(all_chunks, embeddings):
             await session.execute(
                 text(
                     """
@@ -172,10 +181,10 @@ async def ingest_policies() -> None:
                     """
                 ),
                 {
-                    "id": str(chunk["id"]),
-                    "title": chunk["title"],
-                    "content": chunk["content"],
-                    "chunk_index": chunk["chunk_index"],
+                    "id": str(policy_chunk["id"]),
+                    "title": policy_chunk["title"],
+                    "content": policy_chunk["content"],
+                    "chunk_index": policy_chunk["chunk_index"],
                     "embedding": str(embedding),
                 },
             )
