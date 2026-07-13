@@ -4,8 +4,6 @@ Database – Customer Repository
 Repository for Customer entity providing customer-specific queries.
 """
 
-from uuid import UUID
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,13 +44,10 @@ class CustomerRepository(BaseRepository[Customer]):
             List of verified customers
         """
         stmt = (
-            select(self.model)
-            .where(self.model.kyc_status == "VERIFIED")
-            .offset(skip)
-            .limit(limit)
+            select(self.model).where(self.model.kyc_status == "VERIFIED").offset(skip).limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_pending_kyc(self, skip: int = 0, limit: int = 100) -> list[Customer]:
         """
@@ -66,13 +61,10 @@ class CustomerRepository(BaseRepository[Customer]):
             List of customers with pending KYC
         """
         stmt = (
-            select(self.model)
-            .where(self.model.kyc_status == "PENDING")
-            .offset(skip)
-            .limit(limit)
+            select(self.model).where(self.model.kyc_status == "PENDING").offset(skip).limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def email_exists(self, email: str) -> bool:
         """

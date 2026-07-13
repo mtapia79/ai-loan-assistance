@@ -5,10 +5,10 @@ Generic base repository class implementing common CRUD operations.
 All repositories inherit from this and add domain-specific methods.
 """
 
-from typing import Generic, TypeVar, Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
@@ -66,7 +66,7 @@ class BaseRepository(Generic[ModelT]):
         """
         stmt = select(self.model).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def count(self) -> int:
         """

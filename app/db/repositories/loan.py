@@ -41,7 +41,7 @@ class LoanRepository(BaseRepository[LoanApplication]):
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_status(
         self, status: str, skip: int = 0, limit: int = 100
@@ -57,16 +57,13 @@ class LoanRepository(BaseRepository[LoanApplication]):
         Returns:
             List of applications with the specified status
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.status == status)
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).where(self.model.status == status).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def get_pending_applications(self, skip: int = 0, limit: int = 100) -> list[LoanApplication]:
+    async def get_pending_applications(
+        self, skip: int = 0, limit: int = 100
+    ) -> list[LoanApplication]:
         """
         Get all pending loan applications.
 
@@ -100,9 +97,11 @@ class LoanRepository(BaseRepository[LoanApplication]):
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def get_approved_applications(self, skip: int = 0, limit: int = 100) -> list[LoanApplication]:
+    async def get_approved_applications(
+        self, skip: int = 0, limit: int = 100
+    ) -> list[LoanApplication]:
         """
         Get all approved loan applications.
 
@@ -115,7 +114,9 @@ class LoanRepository(BaseRepository[LoanApplication]):
         """
         return await self.get_by_recommendation("APPROVE", skip, limit)
 
-    async def get_rejected_applications(self, skip: int = 0, limit: int = 100) -> list[LoanApplication]:
+    async def get_rejected_applications(
+        self, skip: int = 0, limit: int = 100
+    ) -> list[LoanApplication]:
         """
         Get all rejected loan applications.
 

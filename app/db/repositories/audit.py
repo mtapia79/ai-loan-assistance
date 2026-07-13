@@ -42,7 +42,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_agent(
         self, agent_name: str, skip: int = 0, limit: int = 100
@@ -66,7 +66,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_trace_id(self, trace_id: str) -> list[AuditLog]:
         """
@@ -84,7 +84,7 @@ class AuditRepository(BaseRepository[AuditLog]):
             .order_by(self.model.created_at.desc())
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def log_action(
         self,
@@ -131,6 +131,10 @@ class AuditRepository(BaseRepository[AuditLog]):
         """
         from sqlalchemy import func
 
-        stmt = select(func.count()).select_from(self.model).where(self.model.application_id == application_id)
+        stmt = (
+            select(func.count())
+            .select_from(self.model)
+            .where(self.model.application_id == application_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar() or 0

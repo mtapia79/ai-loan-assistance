@@ -4,8 +4,6 @@ Database – Policy Repository
 Repository for PolicyDocument entity providing policy-specific queries with vector search.
 """
 
-from uuid import UUID
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,7 +30,7 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
         """
         stmt = select(self.model).where(self.model.title.ilike(f"%{title}%"))
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_all_active(self, skip: int = 0, limit: int = 100) -> list[PolicyDocument]:
         """
@@ -45,14 +43,9 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
         Returns:
             List of active policy documents with embeddings
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.embedding.is_not(None))
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).where(self.model.embedding.is_not(None)).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def count_active(self) -> int:
         """
@@ -65,7 +58,9 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
         result = await self.session.execute(stmt)
         return len(result.scalars().all())
 
-    async def get_by_content_fragment(self, fragment: str, skip: int = 0, limit: int = 100) -> list[PolicyDocument]:
+    async def get_by_content_fragment(
+        self, fragment: str, skip: int = 0, limit: int = 100
+    ) -> list[PolicyDocument]:
         """
         Get policy documents by content fragment (keyword search).
 
@@ -84,11 +79,9 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
             .limit(limit)
         )
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def vector_search(
-        self, embedding: list[float], limit: int = 5
-    ) -> list[PolicyDocument]:
+    async def vector_search(self, embedding: list[float], limit: int = 5) -> list[PolicyDocument]:
         """
         Search for similar policies using vector similarity (cosine distance).
 
@@ -125,4 +118,4 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
 
         stmt = select(self.model).where(self.model.id.in_(ids))
         result = await self.session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())

@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from app.config import get_settings
-from app.db.models import Customer, LoanApplication, PolicyDocument, AuditLog
 from app.db.session import session_context
 from app.db.unit_of_work import UnitOfWork
 
@@ -32,18 +31,40 @@ async def seed_customers(uow: UnitOfWork, count: int = 10) -> list[str]:
     customer_ids = []
 
     first_names = [
-        "John", "Jane", "Michael", "Sarah", "David",
-        "Emma", "James", "Olivia", "Robert", "Sophia"
+        "John",
+        "Jane",
+        "Michael",
+        "Sarah",
+        "David",
+        "Emma",
+        "James",
+        "Olivia",
+        "Robert",
+        "Sophia",
     ]
     last_names = [
-        "Smith", "Johnson", "Williams", "Brown", "Jones",
-        "Garcia", "Miller", "Davis", "Rodriguez", "Martinez"
+        "Smith",
+        "Johnson",
+        "Williams",
+        "Brown",
+        "Jones",
+        "Garcia",
+        "Miller",
+        "Davis",
+        "Rodriguez",
+        "Martinez",
     ]
     cities = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"]
     states = ["NY", "CA", "IL", "TX", "AZ"]
     industries = [
-        "Technology", "Finance", "Healthcare", "Manufacturing",
-        "Retail", "Education", "Transportation", "Construction"
+        "Technology",
+        "Finance",
+        "Healthcare",
+        "Manufacturing",
+        "Retail",
+        "Education",
+        "Transportation",
+        "Construction",
     ]
 
     for i in range(count):
@@ -75,7 +96,9 @@ async def seed_customers(uow: UnitOfWork, count: int = 10) -> list[str]:
     return customer_ids
 
 
-async def seed_loan_applications(uow: UnitOfWork, customer_ids: list[str], count_per_customer: int = 2) -> list[str]:
+async def seed_loan_applications(
+    uow: UnitOfWork, customer_ids: list[str], count_per_customer: int = 2
+) -> list[str]:
     """
     Create sample loan applications.
 
@@ -91,8 +114,13 @@ async def seed_loan_applications(uow: UnitOfWork, customer_ids: list[str], count
     statuses = ["PENDING", "PROCESSING", "COMPLETED", "FAILED"]
     recommendations = ["APPROVE", "REJECT", "MANUAL_REVIEW"]
     purposes = [
-        "Home Purchase", "Vehicle Purchase", "Debt Consolidation",
-        "Business Expansion", "Education", "Medical Expenses", "Home Improvement"
+        "Home Purchase",
+        "Vehicle Purchase",
+        "Debt Consolidation",
+        "Business Expansion",
+        "Education",
+        "Medical Expenses",
+        "Home Improvement",
     ]
 
     for cust_idx, customer_id in enumerate(customer_ids):
@@ -110,10 +138,25 @@ async def seed_loan_applications(uow: UnitOfWork, customer_ids: list[str], count
                 requested_amount=50000 + (app_idx * 10000),
                 loan_purpose=purposes[(cust_idx + app_idx) % len(purposes)],
                 credit_score=customer.credit_score or 700,
-                recommendation=recommendations[(cust_idx + app_idx) % len(recommendations)] if app_idx % 2 == 0 else None,
+                recommendation=(
+                    recommendations[(cust_idx + app_idx) % len(recommendations)]
+                    if app_idx % 2 == 0
+                    else None
+                ),
                 confidence_score=0.85 + (app_idx * 0.05) if app_idx % 2 == 0 else None,
-                explanation="Application reviewed by automated underwriting system" if app_idx % 2 == 0 else None,
-                agent_reasoning={"score": 0.85 + (app_idx * 0.05), "factors": ["income", "credit_score"]} if app_idx % 2 == 0 else None,
+                explanation=(
+                    "Application reviewed by automated underwriting system"
+                    if app_idx % 2 == 0
+                    else None
+                ),
+                agent_reasoning=(
+                    {
+                        "score": 0.85 + (app_idx * 0.05),
+                        "factors": ["income", "credit_score"],
+                    }
+                    if app_idx % 2 == 0
+                    else None
+                ),
                 status=statuses[app_idx % len(statuses)],
             )
             application_ids.append(str(application.id))
@@ -130,6 +173,8 @@ async def seed_audit_logs(uow: UnitOfWork, application_ids: list[str]) -> None:
         uow: Unit of Work instance
         application_ids: List of application IDs to create audit logs for
     """
+    from uuid import UUID
+
     agents = ["credit_assessment", "document_verification", "policy_engine", "decision_maker"]
     actions = [
         "Application received",
@@ -142,9 +187,10 @@ async def seed_audit_logs(uow: UnitOfWork, application_ids: list[str]) -> None:
         "Application rejected",
     ]
 
-    for app_idx, application_id in enumerate(application_ids):
+    for app_idx, application_id_str in enumerate(application_ids):
         # Create 2-4 audit logs per application
         log_count = 2 + (app_idx % 3)
+        application_id = UUID(application_id_str)
         for log_idx in range(log_count):
             audit_log = await uow.audits.log_action(
                 application_id=application_id,
@@ -173,18 +219,18 @@ async def seed_policies(uow: UnitOfWork) -> None:
             "title": "Income Verification Policy",
             "content": """
             Income Verification Policy
-            
+
             1. Acceptable Income Documentation
                - Recent pay stubs (last 2 months)
                - W-2 forms (last 2 years)
                - Tax returns (last 2 years)
                - Bank statements (last 3 months)
-            
+
             2. Income Calculation
                - Use average of last 24 months
                - Exclude one-time bonuses
                - Include overtime as average of last 12 months
-            
+
             3. Self-Employment Income
                - Use average net income from last 2 years
                - Require business tax returns
@@ -195,19 +241,19 @@ async def seed_policies(uow: UnitOfWork) -> None:
             "title": "Credit Score Requirements",
             "content": """
             Credit Score Policy
-            
+
             1. Minimum Credit Scores
                - Excellent (750+): Approved at lower rates
                - Good (700-749): Standard approval
                - Fair (650-699): Requires manual review
                - Poor (below 650): Additional documentation required
-            
+
             2. Credit Report Analysis
                - Review all accounts on file
                - Assess payment history
                - Evaluate credit utilization
                - Consider recent inquiries
-            
+
             3. Adverse Items
                - Evaluate bankruptcy (must be 2+ years old)
                - Consider late payments (weight by recency)
@@ -218,17 +264,17 @@ async def seed_policies(uow: UnitOfWork) -> None:
             "title": "Debt-to-Income Ratio Policy",
             "content": """
             Debt-to-Income Ratio (DTI) Policy
-            
+
             1. Calculation Method
                - Total monthly debt payments / gross monthly income
                - Include: Credit cards, car loans, student loans, proposed loan
                - Maximum acceptable DTI: 43%
-            
+
             2. Special Cases
                - Compensating factors may allow up to 50% DTI
                - Large reserves may allow higher DTI
                - Significant income increase expected documented
-            
+
             3. Debt Classification
                - Mortgage payments: Include principal, interest, taxes, insurance
                - Auto loans: Include full payment
@@ -240,18 +286,18 @@ async def seed_policies(uow: UnitOfWork) -> None:
             "title": "Employment Verification Policy",
             "content": """
             Employment Verification Policy
-            
+
             1. Verification Methods
                - Direct employer verification letter
                - Verification of Employment (VOE) form
                - Recent pay stubs
                - Tax returns for self-employed
-            
+
             2. Employment History
                - Require 2 years employment history
                - Same employer required for last 2 years
                - Current job tenure: minimum 90 days
-            
+
             3. Job Changes
                - Career progression in same field acceptable
                - Lateral moves acceptable
@@ -262,17 +308,17 @@ async def seed_policies(uow: UnitOfWork) -> None:
             "title": "Loan Amount Guidelines",
             "content": """
             Loan Amount Policy
-            
+
             1. Loan-to-Value (LTV) Ratio
                - Maximum LTV: 95%
                - LTV Calculation: Loan amount / Property value
                - Higher LTV requires additional compensation
-            
+
             2. Loan Amount Limits
                - Conventional loans: Up to $1,000,000
                - Jumbo loans: $1,000,001 and above
                - FHA loans: $431,200 (varies by county)
-            
+
             3. Requested Amount Validation
                - Must align with stated loan purpose
                - Cannot exceed property value

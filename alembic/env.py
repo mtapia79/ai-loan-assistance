@@ -63,7 +63,7 @@ async def run_async_migrations() -> None:
     settings = get_settings()
 
     connectable = create_async_engine(
-        settings.database_url_sync,
+        settings.database_url,
         poolclass=pool.NullPool,
     )
 
@@ -85,3 +85,4 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
