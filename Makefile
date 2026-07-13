@@ -1,7 +1,7 @@
-.PHONY: help install dev lint test test-cov build up down migrate seed clean
+.PHONY: help install dev lint format test test-cov test-unit build up down logs migrate migrate-create seed clean pre-commit k8s-apply k8s-delete k8s-status
 
 PYTHON := python3
-PIP    := pip
+POETRY := poetry
 APP    := app.main:app
 
 help: ## Show this help
@@ -9,33 +9,38 @@ help: ## Show this help
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ── Local setup ─────────────────────────────────────────────
-install: ## Install production dependencies
-	$(PIP) install -e .
+install: ## Install production dependencies with Poetry
+	$(POETRY) install --no-dev
 
-dev: ## Install dev dependencies
-	$(PIP) install -e ".[dev]"
+dev: ## Install all dependencies including dev tools
+	$(POETRY) install
 
 # ── Code quality ────────────────────────────────────────────
-lint: ## Run ruff linter
-	ruff check app tests
-	ruff format --check app tests
+lint: ## Run linters (ruff + black)
+	$(POETRY) run ruff check app tests
+	$(POETRY) run ruff format --check app tests
+	$(POETRY) run black --check app tests
 
-format: ## Auto-format code
-	ruff format app tests
-	ruff check --fix app tests
+format: ## Auto-format code with Black and Ruff
+	$(POETRY) run black app tests
+	$(POETRY) run ruff check --fix app tests
+	$(POETRY) run ruff format app tests
 
 typecheck: ## Run mypy type checker
-	mypy app
+	$(POETRY) run mypy app
+
+pre-commit: ## Run pre-commit hooks
+	$(POETRY) run pre-commit run --all-files
 
 # ── Testing ──────────────────────────────────────────────────
-test: ## Run tests (requires running DB)
-	pytest tests/ -v --asyncio-mode=auto
+test: ## Run all tests (requires running DB)
+	$(POETRY) run pytest tests/ -v --asyncio-mode=auto
 
 test-cov: ## Run tests with coverage report
-	pytest tests/ -v --asyncio-mode=auto --cov=app --cov-report=html --cov-report=term-missing
+	$(POETRY) run pytest tests/ -v --asyncio-mode=auto --cov=app --cov-report=html --cov-report=term-missing
 
 test-unit: ## Run only unit tests (no DB required)
-	pytest tests/unit/ -v --asyncio-mode=auto
+	$(POETRY) run pytest tests/unit/ -v --asyncio-mode=auto
 
 # ── Docker ───────────────────────────────────────────────────
 build: ## Build Docker image
@@ -52,13 +57,13 @@ logs: ## Follow app logs
 
 # ── Database ─────────────────────────────────────────────────
 migrate: ## Run Alembic migrations
-	alembic upgrade head
+	$(POETRY) run alembic upgrade head
 
 migrate-create: ## Create a new migration (use: make migrate-create MSG="description")
-	alembic revision --autogenerate -m "$(MSG)"
+	$(POETRY) run alembic revision --autogenerate -m "$(MSG)"
 
 seed: ## Seed lending policies into pgvector
-	$(PYTHON) -m app.rag.ingestion
+	$(POETRY) run $(PYTHON) -m app.rag.ingestion
 
 # ── Kubernetes ───────────────────────────────────────────────
 k8s-apply: ## Apply k8s manifests to current context

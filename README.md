@@ -68,21 +68,26 @@
 | Concern | Technology |
 |---|---|
 | API Framework | FastAPI + uvicorn |
-| Language | Python 3.11+ |
+| Language | Python 3.12 |
+| Package Manager | Poetry |
 | Agent Orchestration | LangGraph (directed state graph) |
 | LLM | OpenAI GPT-4o |
 | Tool Protocol | MCP (Model Context Protocol) |
 | RAG | pgvector cosine similarity |
 | Database | PostgreSQL 16 |
 | Vector Store | pgvector extension |
+| Cache | Redis 7 |
 | ORM | SQLAlchemy 2.0 async |
 | Observability | OpenTelemetry SDK + Jaeger |
 | Logging | structlog (JSON in prod, colorized in dev) |
 | Configuration | pydantic-settings |
+| Linting | Ruff + Black |
+| Testing | pytest + pytest-asyncio |
+| Pre-commit | Black, Ruff, mypy, bandit |
+| CI/CD | GitHub Actions |
 | Containerization | Docker multi-stage build |
 | Orchestration | Kubernetes (EKS-ready) |
 | Cloud | AWS deployment readiness |
-| Testing | pytest + pytest-asyncio |
 
 ---
 
@@ -152,30 +157,60 @@ ai-loan-assistance/
 ## Quick Start
 
 ### Prerequisites
-- Python 3.11+
+- Python 3.12
+- Poetry (for dependency management)
 - Docker + Docker Compose
 - OpenAI API key
+- Redis (included in docker-compose)
 
-### 1. Clone and configure
+### Installation & Setup
+
+#### Option 1: Using Docker Compose (Recommended)
 
 ```bash
+# 1. Clone and configure
 cp .env.example .env
 # Edit .env and set OPENAI_API_KEY
-```
 
-### 2. Start the full stack (recommended)
+# 2. Start the full stack (app, postgres, redis, otelcol, jaeger)
+make up
 
-```bash
-make up        # starts app, postgres (pgvector), otelcol, jaeger
+# 3. Run migrations and seed data
 make migrate   # run alembic migrations
 make seed      # ingest lending policies into pgvector
+
+# 4. Visit
+# - API: http://localhost:8000/docs
+# - Jaeger UI: http://localhost:16686
+# - Redis: localhost:6379
 ```
 
-Visit:
-- API: http://localhost:8000/docs
-- Jaeger UI: http://localhost:16686
+#### Option 2: Local Development
 
-### 3. Submit a loan application
+```bash
+# 1. Install Poetry
+curl -sSL https://install.python-poetry.org | python3 -
+
+# 2. Clone and configure
+git clone <repo>
+cd ai-loan-assistance
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY
+
+# 3. Install dependencies
+poetry install
+
+# 4. Run migrations
+poetry run alembic upgrade head
+
+# 5. Seed lending policies
+poetry run python -m app.rag.ingestion
+
+# 6. Start the application
+poetry run uvicorn app.main:app --reload --port 8000
+```
+
+### Quick Test
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/loans/analyze \

@@ -1,5 +1,5 @@
 # ── Stage 1: Builder ─────────────────────────────────────────────────────────
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
@@ -10,14 +10,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency spec first for layer caching
-COPY pyproject.toml .
+COPY pyproject.toml poetry.lock* .
 COPY app/ ./app/
 
-# Install dependencies into /install for clean copy
-RUN pip install --no-cache-dir --prefix=/install -e .
+# Install dependencies using Poetry
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-dev --no-root && \
+    pip install -e .
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 
@@ -31,11 +34,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN groupadd --system appgroup && useradd --system --gid appgroup appuser
 
 # Copy installed packages from builder
-COPY --from=builder /install /usr/local
+COPY --from=builder /usr/local /usr/local
 
 # Copy application source
-COPY --from=builder /build/app ./app
-COPY --from=builder /build/pyproject.toml .
+COPY app/ ./app
+COPY pyproject.toml poetry.lock* .
 
 # Ensure we own our working directory
 RUN chown -R appuser:appgroup /app
