@@ -67,6 +67,7 @@ black = "^24.3.0"
 mypy = "^1.10.0"
 types-python-jose = "^3.3.4"
 pre-commit = "^3.0.0"
+bandit = "^1.7.0"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
