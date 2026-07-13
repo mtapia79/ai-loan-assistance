@@ -7,9 +7,18 @@ Provides shared fixtures for API testing, mock LLMs, and in-memory DB.
 import pytest
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.db.session import get_session, init_db
 from app.main import app
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_db():
+    """Initialize database before running tests."""
+    init_db()
+    yield
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +41,13 @@ async def async_client():
         base_url="http://testserver",
     ) as c:
         yield c
+
+
+@pytest.fixture
+async def db() -> AsyncSession:
+    """Database session for tests."""
+    async for session in get_session():
+        yield session
 
 
 @pytest.fixture
