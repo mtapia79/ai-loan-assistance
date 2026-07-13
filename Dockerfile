@@ -11,12 +11,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Copy dependency spec first for layer caching
 COPY pyproject.toml poetry.lock* .
+COPY README.md .
 COPY app/ ./app/
 
 # Install dependencies using Poetry
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-root && \
+    poetry install --only main --no-root && \
     pip install -e .
 
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
