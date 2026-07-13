@@ -155,12 +155,12 @@ async def ingest_policies() -> None:
         all_chunks: list[PolicyChunk] = []
         for policy in LENDING_POLICIES:
             chunks = _chunk_text(policy["content"])
-            for idx, content_chunk in enumerate(chunks):
+            for idx, chunk_text in enumerate(chunks):
                 all_chunks.append(
                     {
                         "id": uuid.uuid4(),
                         "title": policy["title"],
-                        "content": content_chunk,
+                        "content": chunk_text,
                         "chunk_index": idx,
                     }
                 )
@@ -171,7 +171,7 @@ async def ingest_policies() -> None:
         texts = [c["content"] for c in all_chunks]
         embeddings = await embedder.embed_documents(texts)
 
-        for policy_chunk, embedding in zip(all_chunks, embeddings):
+        for chunk, embedding in zip(all_chunks, embeddings):
             await session.execute(
                 text(
                     """
@@ -181,10 +181,10 @@ async def ingest_policies() -> None:
                     """
                 ),
                 {
-                    "id": str(policy_chunk["id"]),
-                    "title": policy_chunk["title"],
-                    "content": policy_chunk["content"],
-                    "chunk_index": policy_chunk["chunk_index"],
+                    "id": str(chunk["id"]),
+                    "title": chunk["title"],
+                    "content": chunk["content"],
+                    "chunk_index": chunk["chunk_index"],
                     "embedding": str(embedding),
                 },
             )
