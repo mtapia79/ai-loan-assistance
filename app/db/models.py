@@ -16,6 +16,7 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
     func,
@@ -30,6 +31,62 @@ class Base(DeclarativeBase):
     pass
 
 
+# ── Customer ──────────────────────────────────────────────────────────────────
+
+
+class Customer(Base):
+    """Customer profile with KYC information."""
+
+    __tablename__ = "customers"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    phone_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    date_of_birth: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Address information
+    street_address: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    postal_code: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    country: Mapped[str] = mapped_column(String(100), default="US", nullable=False)
+
+    # Compliance information
+    kyc_status: Mapped[str] = mapped_column(
+        Enum("PENDING", "VERIFIED", "REJECTED", name="kyc_status_enum"),
+        default="PENDING",
+        nullable=False,
+    )
+    kyc_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Financial profile
+    annual_income: Mapped[float | None] = mapped_column(Float, nullable=True)
+    credit_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    employment_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    employment_industry: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    # Relationships
+    loan_applications: Mapped[list["LoanApplication"]] = relationship(
+        back_populates="customer", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_customers_email", "email"),
+        Index("ix_customers_kyc_status", "kyc_status"),
+        Index("ix_customers_created_at", "created_at"),
+    )
+
+
 # ── Loan Application ─────────────────────────────────────────────────────────
 
 
@@ -39,6 +96,9 @@ class LoanApplication(Base):
     __tablename__ = "loan_applications"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     applicant_name: Mapped[str] = mapped_column(String(255), nullable=False)
     applicant_email: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -74,6 +134,7 @@ class LoanApplication(Base):
     )
 
     # Relationships
+    customer: Mapped["Customer"] = relationship(back_populates="loan_applications")
     documents: Mapped[list["LoanDocument"]] = relationship(
         back_populates="application", cascade="all, delete-orphan"
     )
@@ -84,6 +145,7 @@ class LoanApplication(Base):
     __table_args__ = (
         Index("ix_loan_applications_status", "status"),
         Index("ix_loan_applications_created_at", "created_at"),
+        Index("ix_loan_applications_customer_id", "customer_id"),
     )
 
 
