@@ -4,7 +4,6 @@ Unit Tests – Correlation ID Middleware
 Tests for request correlation and tracing headers.
 """
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app

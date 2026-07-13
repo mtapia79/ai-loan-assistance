@@ -58,7 +58,9 @@ async def readiness_check(db: AsyncSession = Depends(get_session)) -> HealthResp
 
     # Overall status: 200 if all ok, 503 if any error
     status_str = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
-    status_code = status.HTTP_200_OK if status_str == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
+    status_code = (
+        status.HTTP_200_OK if status_str == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
+    )
 
     response = HealthResponse(
         status=status_str,
@@ -67,11 +69,11 @@ async def readiness_check(db: AsyncSession = Depends(get_session)) -> HealthResp
         checks=checks,
     )
 
-    # If degraded, still return but with different status code
+    # If degraded, raise exception to set proper HTTP status code
     if status_code == status.HTTP_503_SERVICE_UNAVAILABLE:
         raise HTTPException(
             status_code=status_code,
-            detail=response.model_dump(),
+            detail=f"Service degraded. Checks: {checks}",
         )
 
     return response

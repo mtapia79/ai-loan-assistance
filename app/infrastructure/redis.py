@@ -107,4 +107,3 @@ async def health_check_redis() -> dict[str, str]:
         return {"redis": "error: ping failed"}
     except Exception as exc:
         return {"redis": f"error: {exc}"}
-

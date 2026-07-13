@@ -48,7 +48,6 @@ async def db() -> AsyncSession:
     """Database session for tests."""
     async for session in get_session():
         yield session
-        break
 
 
 @pytest.fixture

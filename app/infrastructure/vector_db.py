@@ -5,6 +5,7 @@ Manages pgvector connections for vector embeddings storage and retrieval.
 Provides high-level vector operations with async support.
 """
 
+import re
 from typing import Any
 
 from sqlalchemy import text
@@ -13,6 +14,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.observability.logging import get_logger
 
 logger = get_logger(__name__)
+
+# Whitelist of allowed table names to prevent SQL injection
+ALLOWED_TABLE_NAMES = {"documents", "embeddings", "vectors", "policies"}
+
+
+def _validate_table_name(table_name: str) -> None:
+    """
+    Validate table name to prevent SQL injection.
+
+    Args:
+        table_name: Name to validate
+
+    Raises:
+        ValueError: If table name contains invalid characters
+    """
+    if not table_name:
+        raise ValueError("Table name cannot be empty")
+    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+        raise ValueError(
+            f"Invalid table name '{table_name}'. "
+            "Must contain only alphanumeric characters and underscores."
+        )
 
 
 class VectorDatabase:
@@ -52,10 +75,18 @@ class VectorDatabase:
         Args:
             table_name: Name of the table to create.
             vector_dimension: Dimension of the vector column (default 1536 for OpenAI embeddings).
+
+        Raises:
+            ValueError: If table_name contains invalid characters.
+            Exception: If table creation fails.
         """
+        _validate_table_name(table_name)
+
         try:
+            # Use quoted identifier for safe table name handling
+            quoted_table = f'"{table_name}"'
             sql = f"""
-            CREATE TABLE IF NOT EXISTS {table_name} (
+            CREATE TABLE IF NOT EXISTS {quoted_table} (
                 id SERIAL PRIMARY KEY,
                 content TEXT NOT NULL,
                 embedding vector({vector_dimension}) NOT NULL,
@@ -65,7 +96,7 @@ class VectorDatabase:
             );
 
             CREATE INDEX IF NOT EXISTS {table_name}_embedding_idx
-                ON {table_name}
+                ON {quoted_table}
                 USING HNSW (embedding vector_cosine_ops);
             """
             await self.session.execute(text(sql))
@@ -93,10 +124,18 @@ class VectorDatabase:
 
         Returns:
             ID of inserted record.
+
+        Raises:
+            ValueError: If table_name is invalid.
+            Exception: If insertion fails.
         """
+        _validate_table_name(table_name)
+
         try:
+            # Use quoted identifier for safe table name handling
+            quoted_table = f'"{table_name}"'
             sql = f"""
-            INSERT INTO {table_name} (content, embedding, metadata)
+            INSERT INTO {quoted_table} (content, embedding, metadata)
             VALUES (:content, :embedding, :metadata)
             RETURNING id;
             """
@@ -110,6 +149,8 @@ class VectorDatabase:
             )
             record_id = result.scalar()
             await self.session.commit()
+            if record_id is None:
+                raise RuntimeError("Failed to insert vector - no ID returned")
             return record_id
         except Exception as exc:
             logger.error("vector_insert_error", error=str(exc), table=table_name)
@@ -131,11 +172,19 @@ class VectorDatabase:
 
         Returns:
             List of similar records sorted by similarity (highest first).
+
+        Raises:
+            ValueError: If table_name is invalid.
+            Exception: If search fails.
         """
+        _validate_table_name(table_name)
+
         try:
+            # Use quoted identifier for safe table name handling
+            quoted_table = f'"{table_name}"'
             sql = f"""
             SELECT id, content, metadata, (1 - (embedding <=> :query_embedding)) as similarity
-            FROM {table_name}
+            FROM {quoted_table}
             ORDER BY embedding <=> :query_embedding
             LIMIT :top_k;
             """

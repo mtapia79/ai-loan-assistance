@@ -27,13 +27,13 @@ class ServiceContainer:
     """
 
     @staticmethod
-    async def get_db_session() -> AsyncSession:
+    async def get_db_session() -> Any:  # AsyncGenerator[AsyncSession, None]
         """
         Get a database session.
 
         This is a FastAPI-compatible dependency.
         """
-        async with get_session() as session:
+        async for session in get_session():
             yield session
 
     @staticmethod

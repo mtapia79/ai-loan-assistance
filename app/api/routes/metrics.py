@@ -8,7 +8,6 @@ application health and performance.
 from fastapi import APIRouter, Response
 from prometheus_client import Counter, Histogram, generate_latest
 
-from app.config import get_settings
 from app.observability.logging import get_logger
 
 logger = get_logger(__name__)
@@ -102,8 +101,6 @@ async def metrics() -> Response:
     - database_query_duration_seconds: Database query latencies
     - cache_hits_total: Cache hit counts
     """
-    settings = get_settings()
-
     try:
         metrics_data = generate_latest()
         logger.info("metrics_endpoint_called")

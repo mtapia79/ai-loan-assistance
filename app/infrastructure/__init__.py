@@ -89,11 +89,12 @@ class InfrastructureManager:
         try:
             from app.db.session import get_session
 
-            async with get_session() as session:
+            async for session in get_session():
                 from sqlalchemy import text
 
                 await session.execute(text("SELECT 1"))
                 health["database"] = "ok"
+                break
         except Exception as exc:
             health["database"] = f"error: {exc}"
 
