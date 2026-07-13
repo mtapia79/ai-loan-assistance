@@ -23,6 +23,7 @@ logger = get_logger(__name__)
 
 # ── Credit Report Tool ────────────────────────────────────────────────────────
 
+
 @tool
 async def get_credit_report(applicant_email: str, credit_score: int | None = None) -> dict:
     """
@@ -77,6 +78,7 @@ async def get_credit_report(applicant_email: str, credit_score: int | None = Non
 
 # ── DTI Calculator Tool ───────────────────────────────────────────────────────
 
+
 @tool
 def calculate_dti(annual_income: float, monthly_debt: float) -> dict:
     """
@@ -125,6 +127,7 @@ def calculate_dti(annual_income: float, monthly_debt: float) -> dict:
 
 # ── Policy Retrieval Tool ─────────────────────────────────────────────────────
 
+
 @tool
 async def retrieve_policies(query: str, db_session=None) -> str:
     """
@@ -153,6 +156,7 @@ async def retrieve_policies(query: str, db_session=None) -> str:
 
 
 # ── Document Extraction Tool ──────────────────────────────────────────────────
+
 
 @tool
 def extract_document_data(document_text: str) -> dict:
@@ -207,6 +211,7 @@ def extract_document_data(document_text: str) -> dict:
 
 # ── Compliance Checker Tool ───────────────────────────────────────────────────
 
+
 @tool
 def flag_for_compliance(
     recommendation: str,
@@ -231,9 +236,20 @@ def flag_for_compliance(
 
     # Protected characteristic leak detection
     protected_terms = [
-        "race", "color", "religion", "national origin", "sex", "gender",
-        "marital status", "age", "disability", "children", "familial status",
-        "public assistance", "neighborhood", "zip code",
+        "race",
+        "color",
+        "religion",
+        "national origin",
+        "sex",
+        "gender",
+        "marital status",
+        "age",
+        "disability",
+        "children",
+        "familial status",
+        "public assistance",
+        "neighborhood",
+        "zip code",
     ]
     reasoning_lower = reasoning.lower()
     for term in protected_terms:
@@ -252,9 +268,7 @@ def flag_for_compliance(
         "compliant": len(flags) == 0,
         "flags": flags,
         "override_recommendation": override,
-        "suggested_action": (
-            "ESCALATE_TO_COMPLIANCE" if override else "PROCEED"
-        ),
+        "suggested_action": ("ESCALATE_TO_COMPLIANCE" if override else "PROCEED"),
         "adverse_action_required": recommendation == "REJECT",
     }
 

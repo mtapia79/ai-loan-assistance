@@ -7,7 +7,6 @@ and audit-ready loan application records.
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
@@ -33,14 +32,13 @@ class Base(DeclarativeBase):
 
 # ── Loan Application ─────────────────────────────────────────────────────────
 
+
 class LoanApplication(Base):
     """Core loan application record with full audit trail."""
 
     __tablename__ = "loan_applications"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     applicant_name: Mapped[str] = mapped_column(String(255), nullable=False)
     applicant_email: Mapped[str] = mapped_column(String(255), nullable=False)
 
@@ -49,31 +47,26 @@ class LoanApplication(Base):
     monthly_debt: Mapped[float] = mapped_column(Float, nullable=False)
     requested_amount: Mapped[float] = mapped_column(Float, nullable=False)
     loan_purpose: Mapped[str] = mapped_column(String(100), nullable=False)
-    credit_score: Mapped[Optional[int]] = mapped_column(nullable=True)
+    credit_score: Mapped[int | None] = mapped_column(nullable=True)
 
     # Decision
-    recommendation: Mapped[Optional[str]] = mapped_column(
+    recommendation: Mapped[str | None] = mapped_column(
         Enum("APPROVE", "REJECT", "MANUAL_REVIEW", name="recommendation_enum"),
         nullable=True,
     )
-    confidence_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    agent_reasoning: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_reasoning: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Status
     status: Mapped[str] = mapped_column(
-        Enum(
-            "PENDING", "PROCESSING", "COMPLETED", "FAILED",
-            name="application_status_enum"
-        ),
+        Enum("PENDING", "PROCESSING", "COMPLETED", "FAILED", name="application_status_enum"),
         default="PENDING",
         nullable=False,
     )
 
     # Timestamps
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -96,22 +89,21 @@ class LoanApplication(Base):
 
 # ── Loan Documents ────────────────────────────────────────────────────────────
 
+
 class LoanDocument(Base):
     """Uploaded financial document metadata."""
 
     __tablename__ = "loan_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("loan_applications.id", ondelete="CASCADE"), nullable=False
     )
     filename: Mapped[str] = mapped_column(String(500), nullable=False)
     document_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    s3_key: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    extracted_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    extracted_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    s3_key: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extracted_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -122,27 +114,24 @@ class LoanDocument(Base):
 
 # ── Policy Embeddings (RAG) ───────────────────────────────────────────────────
 
+
 class PolicyDocument(Base):
     """Lending policy chunks stored with pgvector embeddings for RAG."""
 
     __tablename__ = "policy_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     chunk_index: Mapped[int] = mapped_column(nullable=False, default=0)
-    metadata_: Mapped[Optional[dict]] = mapped_column("metadata", JSON, nullable=True)
+    metadata_: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
     # pgvector column – dimension set from config
-    embedding: Mapped[Optional[list[float]]] = mapped_column(
+    embedding: Mapped[list[float] | None] = mapped_column(
         Vector(get_settings().vector_dimension), nullable=True
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         Index(
@@ -157,26 +146,23 @@ class PolicyDocument(Base):
 
 # ── Audit Log ─────────────────────────────────────────────────────────────────
 
+
 class AuditLog(Base):
     """Immutable audit trail for all agent decisions and actions."""
 
     __tablename__ = "audit_logs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     application_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("loan_applications.id", ondelete="CASCADE"), nullable=False
     )
     agent_name: Mapped[str] = mapped_column(String(100), nullable=False)
     action: Mapped[str] = mapped_column(String(200), nullable=False)
-    details: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    trace_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    span_id: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    span_id: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     application: Mapped["LoanApplication"] = relationship(back_populates="audit_logs")
 

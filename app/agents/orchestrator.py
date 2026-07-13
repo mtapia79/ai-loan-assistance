@@ -30,6 +30,7 @@ from typing import Any, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
+from pydantic.v1 import SecretStr
 
 from app.agents.credit_agent import run_credit_agent
 from app.agents.decision_agent import run_decision_agent
@@ -44,6 +45,7 @@ tracer = get_tracer(__name__)
 
 
 # ── Shared Graph State ────────────────────────────────────────────────────────
+
 
 class LoanState(TypedDict):
     """Mutable state passed between all nodes in the loan analysis graph."""
@@ -72,6 +74,7 @@ class LoanState(TypedDict):
 
 
 # ── Graph Node Functions ───────────────────────────────────────────────────────
+
 
 async def credit_node(state: LoanState, llm: ChatOpenAI) -> dict:
     """Node: run credit analysis."""
@@ -211,6 +214,7 @@ async def decision_node(state: LoanState, llm: ChatOpenAI) -> dict:
 
 # ── Graph Builder ──────────────────────────────────────────────────────────────
 
+
 def build_loan_graph(llm: ChatOpenAI, db_session: Any = None):  # type: ignore[return]
     """
     Compile the LangGraph loan analysis workflow.
@@ -247,6 +251,7 @@ def build_loan_graph(llm: ChatOpenAI, db_session: Any = None):  # type: ignore[r
 
 
 # ── Public Interface ───────────────────────────────────────────────────────────
+
 
 async def process_loan_application(
     applicant_name: str,
@@ -291,7 +296,7 @@ async def process_loan_application(
     settings = get_settings()
     llm = ChatOpenAI(
         model=settings.openai_model,
-        api_key=settings.openai_api_key,
+        api_key=SecretStr(settings.openai_api_key),
         temperature=0,
         max_tokens=2000,
     )
@@ -339,9 +344,7 @@ async def process_loan_application(
             k: v for k, v in final_state["credit_findings"].items() if not k.startswith("_")
         },
         "document_findings": {
-            k: v
-            for k, v in final_state["document_findings"].items()
-            if not k.startswith("_")
+            k: v for k, v in final_state["document_findings"].items() if not k.startswith("_")
         },
         "policy_findings": final_state["policy_findings"],
         "errors": final_state.get("errors", []),

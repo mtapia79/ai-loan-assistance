@@ -5,8 +5,6 @@ Tests input validation, output validation, and document PII redaction.
 No database or LLM required.
 """
 
-import pytest
-
 from app.guardrails.validators import (
     GuardrailSeverity,
     sanitise_document_text,
@@ -81,14 +79,12 @@ class TestValidateLoanInput:
     def test_extreme_debt_ratio_warns(self):
         result = validate_loan_input(
             applicant_name="Jane Doe",
-            annual_income=12000.0,   # $1,000/month
-            monthly_debt=5000.0,     # 5x monthly income
+            annual_income=12000.0,  # $1,000/month
+            monthly_debt=5000.0,  # 5x monthly income
             requested_amount=100000.0,
             loan_purpose="home_purchase",
         )
-        warning = [
-            v for v in result.violations if v.code == "DEBT_EXCEEDS_INCOME_2X"
-        ]
+        warning = [v for v in result.violations if v.code == "DEBT_EXCEEDS_INCOME_2X"]
         assert len(warning) > 0
         assert warning[0].severity == GuardrailSeverity.WARNING
         # Warning does not block submission
@@ -107,10 +103,10 @@ class TestValidateLoanInput:
 
     def test_multiple_violations_collected(self):
         result = validate_loan_input(
-            applicant_name="J",         # too short
-            annual_income=-1000.0,      # negative
-            monthly_debt=-500.0,        # negative
-            requested_amount=0.0,       # zero
+            applicant_name="J",  # too short
+            annual_income=-1000.0,  # negative
+            monthly_debt=-500.0,  # negative
+            requested_amount=0.0,  # zero
             loan_purpose="home_purchase",
         )
         assert result.passed is False

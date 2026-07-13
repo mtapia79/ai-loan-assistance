@@ -37,6 +37,7 @@ logger = get_logger(__name__)
 
 # ── Application Lifespan ───────────────────────────────────────────────────────
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage startup and shutdown resources."""
@@ -77,6 +78,7 @@ app.add_middleware(
 
 # ── Exception Handlers ─────────────────────────────────────────────────────────
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("unhandled_exception", error=str(exc), path=request.url.path)
@@ -84,6 +86,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         status_code=500,
         content={"detail": "An unexpected error occurred. Please try again."},
     )
+
 
 # ── Routers ────────────────────────────────────────────────────────────────────
 

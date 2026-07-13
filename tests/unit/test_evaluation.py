@@ -6,8 +6,6 @@ Tests the heuristic decision evaluator.
 
 import uuid
 
-import pytest
-
 from app.evaluation.evaluator import evaluate_decision
 
 

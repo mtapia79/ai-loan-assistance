@@ -6,8 +6,10 @@ Also runs the compliance check before finalising.
 """
 
 import json
+from typing import Any, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 
 from app.mcp.tools import flag_for_compliance
@@ -92,9 +94,12 @@ Please synthesise these findings and produce the final loan decision.
             HumanMessage(content=user_content),
         ]
     )
+    response_content = (
+        response.content if isinstance(response.content, str) else json.dumps(response.content)
+    )
 
     try:
-        result = json.loads(response.content)
+        result = json.loads(response_content)
     except json.JSONDecodeError:
         result = {
             "recommendation": "MANUAL_REVIEW",
@@ -107,12 +112,15 @@ Please synthesise these findings and produce the final loan decision.
         }
 
     # Run compliance gate
-    compliance = flag_for_compliance.invoke(
-        {
-            "recommendation": result.get("recommendation", "MANUAL_REVIEW"),
-            "reasoning": result.get("explanation", ""),
-            "loan_purpose": application_summary.get("loan_purpose", ""),
-        }
+    compliance = cast(
+        dict[str, Any],
+        cast(BaseTool, flag_for_compliance).invoke(
+            {
+                "recommendation": result.get("recommendation", "MANUAL_REVIEW"),
+                "reasoning": result.get("explanation", ""),
+                "loan_purpose": application_summary.get("loan_purpose", ""),
+            }
+        ),
     )
 
     if compliance.get("override_recommendation"):

@@ -4,7 +4,11 @@ Agents – Credit Analysis Agent
 Retrieves and interprets the credit report for an applicant.
 """
 
+import json
+from typing import Any, cast
+
 from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.tools import BaseTool
 from langchain_openai import ChatOpenAI
 
 from app.mcp.tools import calculate_dti, get_credit_report
@@ -22,7 +26,7 @@ You have access to:
 
 Analyse the credit data and provide:
 1. FICO score assessment
-2. DTI ratio analysis  
+2. DTI ratio analysis
 3. Payment history evaluation
 4. Risk tier classification
 5. Confidence score (0.0–1.0)
@@ -62,16 +66,20 @@ async def run_credit_agent(
     Returns:
         Structured credit analysis result dict.
     """
-    import json
-
     logger.info("credit_agent_start", email=applicant_email)
 
     # Invoke tools directly (in a full MCP setup these would be remote calls)
-    credit_report = await get_credit_report.ainvoke(
-        {"applicant_email": applicant_email, "credit_score": credit_score}
+    credit_report = cast(
+        dict[str, Any],
+        await cast(BaseTool, get_credit_report).ainvoke(
+            {"applicant_email": applicant_email, "credit_score": credit_score}
+        ),
     )
-    dti_result = calculate_dti.invoke(
-        {"annual_income": annual_income, "monthly_debt": monthly_debt}
+    dti_result = cast(
+        dict[str, Any],
+        cast(BaseTool, calculate_dti).invoke(
+            {"annual_income": annual_income, "monthly_debt": monthly_debt}
+        ),
     )
 
     user_content = f"""
@@ -89,9 +97,12 @@ Please provide your credit analysis assessment.
             HumanMessage(content=user_content),
         ]
     )
+    response_content = (
+        response.content if isinstance(response.content, str) else json.dumps(response.content)
+    )
 
     try:
-        result = json.loads(response.content)
+        result = json.loads(response_content)
     except json.JSONDecodeError:
         result = {
             "credit_score": credit_report.get("fico_score", 0),

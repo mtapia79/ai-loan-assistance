@@ -56,14 +56,10 @@ def setup_telemetry(app=None) -> None:  # type: ignore[assignment]
             )
         except Exception as exc:  # noqa: BLE001
             logger.warning("otel_exporter_unavailable", error=str(exc))
-            _tracer_provider.add_span_processor(
-                BatchSpanProcessor(InMemorySpanExporter())
-            )
+            _tracer_provider.add_span_processor(BatchSpanProcessor(InMemorySpanExporter()))
     else:
         # Use in-memory exporter in dev/test so no real endpoint is needed
-        _tracer_provider.add_span_processor(
-            BatchSpanProcessor(InMemorySpanExporter())
-        )
+        _tracer_provider.add_span_processor(BatchSpanProcessor(InMemorySpanExporter()))
 
     trace.set_tracer_provider(_tracer_provider)
 

@@ -14,8 +14,7 @@ For demo purposes a fast heuristic evaluator is used (no extra API cost).
 
 import re
 import uuid
-from datetime import datetime, timezone
-from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from app.observability.logging import get_logger
 from app.schemas.loan import EvaluationResult
@@ -25,11 +24,27 @@ logger = get_logger(__name__)
 
 # ── Heuristic Evaluators ──────────────────────────────────────────────────────
 
-_FINANCIAL_TERMS = frozenset([
-    "dti", "debt-to-income", "credit score", "fico", "income", "debt",
-    "payment history", "ltv", "loan-to-value", "down payment", "monthly",
-    "annual", "collateral", "policy", "guideline", "approval", "rejection",
-])
+_FINANCIAL_TERMS = frozenset(
+    [
+        "dti",
+        "debt-to-income",
+        "credit score",
+        "fico",
+        "income",
+        "debt",
+        "payment history",
+        "ltv",
+        "loan-to-value",
+        "down payment",
+        "monthly",
+        "annual",
+        "collateral",
+        "policy",
+        "guideline",
+        "approval",
+        "rejection",
+    ]
+)
 
 _COHERENCE_PATTERNS = [
     re.compile(r"\bbecause\b", re.I),
@@ -108,10 +123,11 @@ def _score_coherence(explanation: str) -> float:
     # Minimum length check
     length_score = min(1.0, len(explanation) / 200)
 
-    return (causal_score * 0.4 + numeric_score * 0.3 + length_score * 0.3)
+    return causal_score * 0.4 + numeric_score * 0.3 + length_score * 0.3
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
+
 
 def evaluate_decision(
     application_id: str,
@@ -159,7 +175,7 @@ def evaluate_decision(
         coherence_score=round(coherence, 3),
         overall_score=round(overall, 3),
         flags=flags,
-        evaluated_at=datetime.now(tz=timezone.utc),
+        evaluated_at=datetime.now(tz=UTC),
     )
 
     logger.info(

@@ -13,55 +13,41 @@ class TestCalculateDTI:
     """Tests for the DTI calculator tool."""
 
     def test_low_dti(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 120000.0, "monthly_debt": 500.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 120000.0, "monthly_debt": 500.0})
         assert result["dti_ratio"] == pytest.approx(5.0, rel=0.01)
         assert result["risk_level"] == "LOW"
 
     def test_moderate_dti(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 60000.0, "monthly_debt": 1500.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 60000.0, "monthly_debt": 1500.0})
         # monthly_income = 5000, dti = 30%
         assert result["dti_ratio"] == pytest.approx(30.0, rel=0.01)
         assert result["risk_level"] == "MODERATE"
 
     def test_elevated_dti_at_limit(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 60000.0, "monthly_debt": 2000.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 60000.0, "monthly_debt": 2000.0})
         # monthly_income = 5000, dti = 40%
         assert result["dti_ratio"] == pytest.approx(40.0, rel=0.01)
         assert result["risk_level"] == "ELEVATED"
 
     def test_critical_dti(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 24000.0, "monthly_debt": 2000.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 24000.0, "monthly_debt": 2000.0})
         # monthly_income = 2000, dti = 100%
         assert result["dti_ratio"] == pytest.approx(100.0, rel=0.01)
         assert result["risk_level"] == "CRITICAL"
 
     def test_zero_income_handled(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 0.0, "monthly_debt": 1000.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 0.0, "monthly_debt": 1000.0})
         # Should not raise ZeroDivisionError
         assert result["dti_ratio"] == 100.0
         assert result["risk_level"] == "CRITICAL"
 
     def test_zero_debt(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 100000.0, "monthly_debt": 0.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 100000.0, "monthly_debt": 0.0})
         assert result["dti_ratio"] == 0.0
         assert result["risk_level"] == "LOW"
 
     def test_monthly_income_in_result(self):
-        result = calculate_dti.invoke(
-            {"annual_income": 120000.0, "monthly_debt": 1000.0}
-        )
+        result = calculate_dti.invoke({"annual_income": 120000.0, "monthly_debt": 1000.0})
         assert result["monthly_income"] == pytest.approx(10000.0, rel=0.01)
 
 
@@ -106,9 +92,7 @@ class TestFlagForCompliance:
         result = flag_for_compliance.invoke(
             {
                 "recommendation": "REJECT",
-                "reasoning": (
-                    "Applicant's race and national origin were considered."
-                ),
+                "reasoning": ("Applicant's race and national origin were considered."),
                 "loan_purpose": "personal",
             }
         )

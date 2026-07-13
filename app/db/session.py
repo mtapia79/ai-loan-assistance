@@ -82,7 +82,10 @@ async def session_context() -> AsyncGenerator[AsyncSession, None]:
     """Context-manager variant for use outside of FastAPI (e.g. scripts)."""
     if _session_factory is None:
         init_db()
-    async with _session_factory() as session:  # type: ignore[union-attr]
+    session_factory = _session_factory
+    if session_factory is None:
+        raise RuntimeError("Database not initialised – call init_db() first")
+    async with session_factory() as session:
         try:
             yield session
             await session.commit()
