@@ -4,6 +4,7 @@ Agents – Credit Analysis Agent
 Retrieves and interprets the credit report for an applicant.
 """
 
+import json
 from typing import Any, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -65,8 +66,6 @@ async def run_credit_agent(
     Returns:
         Structured credit analysis result dict.
     """
-    import json
-
     logger.info("credit_agent_start", email=applicant_email)
 
     # Invoke tools directly (in a full MCP setup these would be remote calls)
