@@ -294,8 +294,9 @@ async def seed_policies(uow: UnitOfWork) -> None:
                - Tax returns for self-employed
 
             2. Employment History
-               - Require 2 years employment history
-               - Same employer required for last 2 years
+               - Require 2 years total employment history
+               - Preferred: Same employer for last 2 years
+               - Acceptable: Job changes with continuous employment
                - Current job tenure: minimum 90 days
 
             3. Job Changes

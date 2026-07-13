@@ -24,6 +24,7 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
 
         Args:
             title: The policy title to search for
+                   (automatically escaped by SQLAlchemy)
 
         Returns:
             List of matching policy documents
@@ -66,6 +67,7 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
 
         Args:
             fragment: Text fragment to search for
+                      (automatically escaped by SQLAlchemy)
             skip: Number of records to skip
             limit: Maximum number of records to return
 
@@ -95,20 +97,19 @@ class PolicyRepository(BaseRepository[PolicyDocument]):
         # Use raw SQL for vector similarity search with pgvector
         from sqlalchemy import text
 
-        # Convert embedding to pgvector format
-        embedding_str = "[" + ",".join(str(e) for e in embedding) + "]"
-
+        # Convert embedding to pgvector format using bound parameter
         sql = text(
-            f"""
+            """
             SELECT id, title, content, chunk_index, metadata, embedding, created_at
             FROM policy_documents
             WHERE embedding IS NOT NULL
-            ORDER BY embedding <-> '{embedding_str}'::vector
+            ORDER BY embedding <-> CAST(:embedding AS vector)
             LIMIT :limit
             """
         )
 
-        result = await self.session.execute(sql)
+        embedding_str = "[" + ",".join(str(e) for e in embedding) + "]"
+        result = await self.session.execute(sql, {"embedding": embedding_str, "limit": limit})
         rows = result.fetchall()
 
         # Fetch the full model instances

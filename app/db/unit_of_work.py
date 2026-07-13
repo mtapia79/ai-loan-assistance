@@ -21,6 +21,10 @@ class UnitOfWork:
 
     Manages all repositories and provides transaction semantics (commit/rollback).
 
+    Note: When using as a context manager, the context will automatically commit
+    on successful exit. If you call commit() manually within the context, the
+    automatic commit on exit will be skipped.
+
     Usage:
         async with UnitOfWork(session) as uow:
             customer = await uow.customers.get_by_email("user@example.com")
@@ -42,6 +46,7 @@ class UnitOfWork:
             session: The async database session
         """
         self._session = session
+        self._manual_commit = False
         self.customers = CustomerRepository(session)
         self.loans = LoanRepository(session)
         self.policies = PolicyRepository(session)
@@ -56,6 +61,7 @@ class UnitOfWork:
         """
         try:
             await self._session.commit()
+            self._manual_commit = True
         except Exception:
             await self._session.rollback()
             raise
@@ -81,6 +87,7 @@ class UnitOfWork:
         """
         if exc_type is not None:
             await self.rollback()
-        else:
+        elif not self._manual_commit:
+            # Only auto-commit if no manual commit was called
             await self.commit()
         await self._session.close()
