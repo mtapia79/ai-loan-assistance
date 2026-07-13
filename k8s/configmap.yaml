@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loan-assistance-config
+  namespace: loan-assistance
+  labels:
+    app.kubernetes.io/name: loan-assistance
+    app.kubernetes.io/component: config
+data:
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  POSTGRES_HOST: "postgres-service"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "loan_assistance"
+  OTEL_ENABLED: "true"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector-service:4317"
+  OTEL_SERVICE_NAME: "ai-loan-assistance"
+  AWS_REGION: "us-east-1"
+  VECTOR_DIMENSION: "1536"
