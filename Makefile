@@ -62,8 +62,10 @@ migrate: ## Run Alembic migrations
 migrate-create: ## Create a new migration (use: make migrate-create MSG="description")
 	$(POETRY) run alembic revision --autogenerate -m "$(MSG)"
 
-seed: ## Seed lending policies into pgvector
+seed: ## Seed database with sample data and policies
+	$(POETRY) run $(PYTHON) -m app.db.seed
 	$(POETRY) run $(PYTHON) -m app.rag.ingestion
+
 
 # ── Kubernetes ───────────────────────────────────────────────
 k8s-apply: ## Apply k8s manifests to current context

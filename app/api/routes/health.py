@@ -57,7 +57,7 @@ async def readiness_check(db: AsyncSession = Depends(get_session)) -> Response:
     except Exception as exc:  # noqa: BLE001
         checks["infrastructure"] = f"error: {exc}"
 
-     # Overall status: 200 if all ok, 503 if any error
+    # Overall status: 200 if all ok, 503 if any error
     status_str = "ok" if all(v == "ok" for v in checks.values()) else "degraded"
     http_status_code = (
         status.HTTP_200_OK if status_str == "ok" else status.HTTP_503_SERVICE_UNAVAILABLE
