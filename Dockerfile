@@ -15,7 +15,7 @@ COPY README.md .
 COPY app/ ./app/
 
 # Install dependencies using Poetry
-RUN pip install --no-cache-dir poetry && \
+RUN pip install --no-cache-dir "poetry>=1.2" && \
     poetry config virtualenvs.create false && \
     poetry install --only main --no-root && \
     pip install -e .
