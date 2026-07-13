@@ -1,0 +1,98 @@
+version: "3.9"
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  loan_net:
+    driver: bridge
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  otel_data:
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # ── Application ─────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: ai-loan-assistance:local
+    container_name: loan_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=INFO
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=loan_assistance
+      - POSTGRES_USER=loan_user
+      - POSTGRES_PASSWORD=changeme
+      - OTEL_ENABLED=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4317
+      - OTEL_SERVICE_NAME=ai-loan-assistance
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - loan_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── PostgreSQL + pgvector ────────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: loan_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: loan_assistance
+      POSTGRES_USER: loan_user
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./app/db/migrations/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    networks:
+      - loan_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loan_user -d loan_assistance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── OpenTelemetry Collector ──────────────────────────────────────────────────
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: loan_otelcol
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics
+    networks:
+      - loan_net
+
+  # ── Jaeger (distributed tracing UI) ─────────────────────────────────────────
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: loan_jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # UI
+      - "14250:14250"   # gRPC
+    networks:
+      - loan_net
