@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     # ── pgvector ───────────────────────────────────────────────────
     vector_dimension: int = 1536
 
+    # ── Redis Cache ────────────────────────────────────────────────
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_password: str = ""
+
     # ── JWT ────────────────────────────────────────────────────────
     jwt_secret_key: str = "dev-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
@@ -77,6 +83,17 @@ class Settings(BaseSettings):
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def redis_url(self) -> str:
+        """Redis connection URL."""
+        if self.redis_password:
+            return (
+                f"redis://:{self.redis_password}@{self.redis_host}:{self.redis_port}/"
+                f"{self.redis_db}"
+            )
+        return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":

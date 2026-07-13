@@ -8,6 +8,7 @@ networks:
 # ── Volumes ───────────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
+  redis_data:
   otel_data:
 
 # ── Services ──────────────────────────────────────────────────────────────────
@@ -32,6 +33,8 @@ services:
       - POSTGRES_DB=loan_assistance
       - POSTGRES_USER=loan_user
       - POSTGRES_PASSWORD=changeme
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       - OTEL_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otelcol:4317
       - OTEL_SERVICE_NAME=ai-loan-assistance
@@ -39,6 +42,8 @@ services:
       - .env
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - loan_net
@@ -67,6 +72,25 @@ services:
       - loan_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U loan_user -d loan_assistance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cache ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: loan_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./docker/redis-config.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - loan_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
