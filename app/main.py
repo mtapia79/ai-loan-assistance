@@ -21,10 +21,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.middleware.logging import RequestLoggingMiddleware
-from app.api.routes import health, loans
+from app.api.middleware.correlation import CorrelationIDMiddleware
+from app.api.routes import health, loans, metrics
 from app.config import get_settings
 from app.db.session import close_db, init_db
+from app.infrastructure import InfrastructureManager
+from app.infrastructure.openapi import setup_openapi
 from app.observability.logging import configure_logging, get_logger
 from app.observability.telemetry import setup_telemetry
 
@@ -42,10 +44,22 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Manage startup and shutdown resources."""
     logger.info("app_startup", env=settings.app_env, version=settings.app_version)
+
+    # Initialize core databases
     init_db()
+
+    # Initialize infrastructure services (Redis, etc.)
+    await InfrastructureManager.initialize()
+
+    # Set up observability
     setup_telemetry(app)
+
+    logger.info("app_startup_complete")
     yield
     logger.info("app_shutdown")
+
+    # Graceful shutdown
+    await InfrastructureManager.shutdown()
     await close_db()
 
 
@@ -64,9 +78,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Set up customized OpenAPI schema
+setup_openapi(app)
+
 # ── Middleware ─────────────────────────────────────────────────────────────────
 
-app.add_middleware(RequestLoggingMiddleware)
+# Correlation ID middleware (must be before CORS)
+app.add_middleware(CorrelationIDMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -92,3 +110,4 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 app.include_router(health.router)
 app.include_router(loans.router)
+app.include_router(metrics.router)
