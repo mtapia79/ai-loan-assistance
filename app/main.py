@@ -42,7 +42,6 @@ async def lifespan(app: FastAPI):
     """Manage startup and shutdown resources."""
     logger.info("app_startup", env=settings.app_env, version=settings.app_version)
     init_db()
-    setup_telemetry(app)
     yield
     logger.info("app_shutdown")
     await close_db()
@@ -62,6 +61,9 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+
+# Configure telemetry before startup so middleware can be registered safely.
+setup_telemetry(app)
 
 # ── Middleware ─────────────────────────────────────────────────────────────────
 
